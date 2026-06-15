@@ -83,7 +83,7 @@ function AuthPage() {
 
         <button
           onClick={handleGoogle}
-          className="w-full bg-foreground text-background font-display px-6 py-3 uppercase tracking-widest text-sm mb-3 hover:opacity-90"
+          className="w-full bg-foreground text-background font-display px-6 py-3 uppercase tracking-widest text-sm mb-3 hover:opacity-90 hover:cursor-pointer"
         >
           Continuar com Google
         </button>
