@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PremiumRouteImport } from './routes/premium'
+import { Route as MatchesRouteImport } from './routes/matches'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -19,6 +20,11 @@ import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 const PremiumRoute = PremiumRouteImport.update({
   id: '/premium',
   path: '/premium',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MatchesRoute = MatchesRouteImport.update({
+  id: '/matches',
+  path: '/matches',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRouteWithChildren
+  '/matches': typeof MatchesRoute
   '/premium': typeof PremiumRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/sala/$code': typeof SalaCodeRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRouteWithChildren
+  '/matches': typeof MatchesRoute
   '/premium': typeof PremiumRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/sala/$code': typeof SalaCodeRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRouteWithChildren
+  '/matches': typeof MatchesRoute
   '/premium': typeof PremiumRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/sala/$code': typeof SalaCodeRoute
@@ -78,16 +87,25 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/matches'
     | '/premium'
     | '/auth/callback'
     | '/sala/$code'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/auth' | '/premium' | '/auth/callback' | '/sala/$code'
+  to:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/matches'
+    | '/premium'
+    | '/auth/callback'
+    | '/sala/$code'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/auth'
+    | '/matches'
     | '/premium'
     | '/auth/callback'
     | '/sala/$code'
@@ -97,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRouteWithChildren
+  MatchesRoute: typeof MatchesRoute
   PremiumRoute: typeof PremiumRoute
   SalaCodeRoute: typeof SalaCodeRoute
 }
@@ -108,6 +127,13 @@ declare module '@tanstack/react-router' {
       path: '/premium'
       fullPath: '/premium'
       preLoaderRoute: typeof PremiumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/matches': {
+      id: '/matches'
+      path: '/matches'
+      fullPath: '/matches'
+      preLoaderRoute: typeof MatchesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -162,6 +188,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRouteWithChildren,
+  MatchesRoute: MatchesRoute,
   PremiumRoute: PremiumRoute,
   SalaCodeRoute: SalaCodeRoute,
 }

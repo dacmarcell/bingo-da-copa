@@ -52,11 +52,18 @@ function Home() {
   const [openModal, setOpenModal] = useState<Match | null>(null);
 
   useEffect(() => {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
     supabase
       .from("matches")
       .select("*")
-      .order("starts_at")
+      .gte("starts_at", todayStart.toISOString())
+      .neq("status", "finished")
+      .order("starts_at", { ascending: true })
+      .limit(3)
       .then(({ data }) => setMatches((data ?? []) as Match[]));
+
     supabase
       .from("rooms")
       .select("*")
@@ -155,9 +162,17 @@ function Home() {
 
       {/* Matches */}
       <section className="mb-10">
-        <h3 className="font-mono text-[10px] text-muted-foreground uppercase mb-3 tracking-widest">
-          Próximas partidas
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
+            Próximas partidas
+          </h3>
+          <Link
+            to="/matches"
+            className="font-mono text-[10px] uppercase text-primary hover:underline"
+          >
+            Ver todas
+          </Link>
+        </div>
         <div className="space-y-2">
           {matches.map((m) => (
             <button
@@ -185,7 +200,7 @@ function Home() {
           ))}
           {!matches.length && (
             <p className="text-xs text-muted-foreground italic">
-              Nenhuma partida cadastrada ainda.
+              Nenhuma partida cadastrada para hoje ou depois.
             </p>
           )}
         </div>
