@@ -178,7 +178,7 @@ function Home() {
             <button
               key={m.id}
               onClick={() => setOpenModal(m)}
-              className="w-full bg-card border border-border p-3 flex justify-between items-center group hover:border-primary/40 transition-colors text-left"
+              className="w-full bg-card border border-border p-3 flex justify-between items-center group hover:border-primary/40 transition-colors text-left hover:cursor-pointer"
             >
               <div className="flex items-center gap-4">
                 <span className="font-mono text-xs text-muted-foreground">

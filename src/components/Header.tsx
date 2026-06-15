@@ -33,7 +33,7 @@ export function Header({ subtitle }: { subtitle?: string }) {
             </span>
             <button
               onClick={() => supabase.auth.signOut()}
-              className="font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground"
+              className="font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground hover:cursor-pointer"
             >
               Sair
             </button>

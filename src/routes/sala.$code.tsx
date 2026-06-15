@@ -169,12 +169,10 @@ function RoomPage() {
     try {
       const finishedAt = new Date().toISOString();
 
-      const { error } = await supabase
+      await supabase
         .from("rooms")
         .update({ status: "finished", finished_at: finishedAt })
         .eq("id", room.id);
-
-      console.log("error", error);
 
       // Update local room state immediately so the UI displays the final ranking
       setRoom((r) => (r ? { ...r, status: "finished", finished_at: finishedAt } : r));

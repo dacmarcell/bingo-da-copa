@@ -144,6 +144,130 @@ export type Database = {
           },
         ];
       };
+      transactions: {
+        Row: {
+          amount: string;
+          created_at: string;
+          expires_at: string | null;
+          external_id: string | null;
+          gateway: string;
+          id: string;
+          paid_at: string | null;
+          pixup_charge_id: string | null;
+          qr_code: string | null;
+          qr_code_text: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string;
+          metadata: Json | null;
+        };
+        Insert: {
+          amount: string | number;
+          created_at?: string;
+          expires_at?: string | null;
+          external_id?: string | null;
+          gateway?: string;
+          id?: string;
+          paid_at?: string | null;
+          pixup_charge_id?: string | null;
+          qr_code?: string | null;
+          qr_code_text?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+          metadata?: Json | null;
+        };
+        Update: {
+          amount?: string | number;
+          created_at?: string;
+          expires_at?: string | null;
+          external_id?: string | null;
+          gateway?: string;
+          id?: string;
+          paid_at?: string | null;
+          pixup_charge_id?: string | null;
+          qr_code?: string | null;
+          qr_code_text?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+          metadata?: Json | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "transactions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      payment_audit_logs: {
+        Row: {
+          created_at: string;
+          event: string;
+          id: string;
+          payload: Json;
+          transaction_id: string;
+          webhook_event_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          event: string;
+          id?: string;
+          payload: Json;
+          transaction_id: string;
+          webhook_event_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          event?: string;
+          id?: string;
+          payload?: Json;
+          transaction_id?: string;
+          webhook_event_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payment_audit_logs_transaction_id_fkey";
+            columns: ["transaction_id"];
+            isOneToOne: false;
+            referencedRelation: "transactions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      pixup_tokens: {
+        Row: {
+          access_token: string;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          refresh_token: string | null;
+          scope: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          access_token: string;
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          refresh_token?: string | null;
+          scope?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          access_token?: string;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          refresh_token?: string | null;
+          scope?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       rooms: {
         Row: {
           code: string;

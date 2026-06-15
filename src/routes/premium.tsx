@@ -3,6 +3,16 @@ import { Header } from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useEffect, useState } from "react";
+
+type PixTransaction = {
+  transaction_id: string;
+  amount: number;
+  qrCode: string | null;
+  qrCodeText: string | null;
+  expirationDate: string | null;
+  status: string;
+};
 
 export const Route = createFileRoute("/premium")({
   head: () => ({ meta: [{ title: "Premium - Bingo da Copa" }] }),
@@ -12,30 +22,66 @@ export const Route = createFileRoute("/premium")({
 function PremiumPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [transaction, setTransaction] = useState<PixTransaction | null>(null);
+  const [polling, setPolling] = useState(false);
 
-  async function activate() {
+  async function createPixCharge() {
     if (!user) {
       navigate({ to: "/auth" });
       return;
     }
-    // Stub PIX flow - in real life we'd generate a PIX charge and confirm via webhook.
-    const expiresAt = new Date();
-    expiresAt.setMonth(expiresAt.getMonth() + 1);
-    const { error } = await supabase.from("subscriptions").upsert(
-      {
-        user_id: user.id,
-        active: true,
-        expires_at: expiresAt.toISOString(),
-      },
-      { onConflict: "user_id" },
-    );
-    if (error) {
-      toast.error("Erro ao ativar");
-      return;
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create_pix_charge", {
+        body: JSON.stringify({ amount: 4.9, description: "Assinatura Premium" }),
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const payload = data as PixTransaction;
+      setTransaction(payload);
+      setPolling(true);
+      toast.success("Cobrança Pix criada. Escaneie o QR Code para pagar.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao criar cobrança Pix");
+    } finally {
+      setLoading(false);
     }
-    toast.success("Premium ativado! Aproveite os temas exclusivos.");
-    navigate({ to: "/" });
   }
+
+  async function refreshTransaction() {
+    if (!transaction) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke("get_transaction_status", {
+        body: JSON.stringify({ transaction_id: transaction.transaction_id }),
+      });
+
+      if (error) {
+        console.error("Failed to refresh transaction", error);
+        return;
+      }
+
+      const payload = data as PixTransaction;
+      setTransaction(payload);
+      if (payload.status === "PAID") {
+        setPolling(false);
+        toast.success("Pagamento confirmado! A assinatura será ativada pelo webhook.");
+      }
+    } catch (err) {
+      console.error("Status refresh error", err);
+    }
+  }
+
+  useEffect(() => {
+    if (!polling || !transaction) return;
+    const interval = setInterval(refreshTransaction, 5000);
+    return () => clearInterval(interval);
+  }, [polling, transaction]);
 
   return (
     <div className="min-h-screen bg-background text-foreground font-body p-4 max-w-md mx-auto pb-24">
@@ -71,15 +117,47 @@ function PremiumPage() {
       </h2>
       <div className="bg-card border border-border p-4 mb-4">
         <p className="text-xs text-muted-foreground mb-3">
-          Após confirmar o pagamento via PIX, sua assinatura é ativada automaticamente por 30 dias.
+          A assinatura só será ativada após confirmação oficial da Pixup pelo webhook. Enquanto
+          isso, o acesso premium permanece bloqueado.
         </p>
         <button
-          onClick={activate}
-          className="w-full bg-primary text-primary-foreground font-display px-6 py-3 uppercase tracking-widest text-sm"
+          onClick={createPixCharge}
+          disabled={loading || !!transaction}
+          className="w-full bg-primary text-primary-foreground font-display px-6 py-3 uppercase tracking-widest text-sm hover:cursor-pointer disabled:opacity-50"
         >
-          Ativar Premium - R$ 4,90
+          {transaction
+            ? "Pagamento pendente"
+            : loading
+              ? "Aguardando..."
+              : "Pagar com Pix - R$ 4,90"}
         </button>
       </div>
+
+      {transaction && (
+        <div className="bg-card border border-border p-4 mb-4">
+          <h3 className="font-display text-lg uppercase tracking-tight mb-3">Pagamento Pix</h3>
+          <div className="space-y-3">
+            {transaction.qrCode ? (
+              <img src={transaction.qrCode} alt="QR Code Pix" className="w-full rounded-md" />
+            ) : (
+              <p className="text-sm text-muted-foreground">QR Code indisponível.</p>
+            )}
+            <div className="bg-background border border-border p-3 rounded-md">
+              <p className="text-[10px] uppercase text-muted-foreground mb-2">Copiar e colar</p>
+              <pre className="text-xs break-words">{transaction.qrCodeText}</pre>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Status: <span className="font-bold uppercase">{transaction.status}</span>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Expira em:{" "}
+              {transaction.expirationDate
+                ? new Date(transaction.expirationDate).toLocaleString("pt-BR")
+                : "—"}
+            </p>
+          </div>
+        </div>
+      )}
 
       <Link
         to="/"
