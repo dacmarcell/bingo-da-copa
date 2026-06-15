@@ -53,9 +53,7 @@ function MatchesPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="font-display text-4xl uppercase tracking-tight mb-2">Partidas</h1>
-          <p className="text-sm text-muted-foreground">
-            Somente partidas de hoje em diante e sem jogos finalizados.
-          </p>
+          <p className="text-sm text-muted-foreground">Somente partidas de hoje em diante.</p>
         </div>
         <Link to="/" className="font-mono text-[10px] uppercase text-primary hover:underline">
           Voltar
@@ -79,6 +77,7 @@ function MatchesPage() {
               </div>
               <p className="font-mono text-xs text-muted-foreground text-right">
                 {new Date(m.starts_at).toLocaleString("pt-BR", {
+                  timeZone: "UTC",
                   day: "2-digit",
                   month: "2-digit",
                   hour: "2-digit",

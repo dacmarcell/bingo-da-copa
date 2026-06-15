@@ -165,11 +165,38 @@ function RoomPage() {
 
   async function endGame() {
     if (!room || !user || room.creator_id !== user.id) return;
-    await supabase
-      .from("rooms")
-      .update({ status: "finished", finished_at: new Date().toISOString() })
-      .eq("id", room.id);
-    toast.success("Bingo encerrado! Veja o ranking final.");
+
+    try {
+      const finishedAt = new Date().toISOString();
+
+      const { error } = await supabase
+        .from("rooms")
+        .update({ status: "finished", finished_at: finishedAt })
+        .eq("id", room.id);
+
+      console.log("error", error);
+
+      // Update local room state immediately so the UI displays the final ranking
+      setRoom((r) => (r ? { ...r, status: "finished", finished_at: finishedAt } : r));
+
+      // Fetch final ranking ordered by score descending
+      const { data } = await supabase
+        .from("room_participants")
+        .select("*")
+        .eq("room_id", room.id)
+        .order("score", { ascending: false });
+      setParticipants((data ?? []) as Participant[]);
+
+      // celebration and UX niceties
+      setConfetti(true);
+      setTimeout(() => setConfetti(false), 3500);
+      // scroll to top where the ranking is shown
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+
+      toast.success("Bingo encerrado! Veja o ranking final.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao encerrar o bingo");
+    }
   }
 
   function shareWhatsApp() {
@@ -320,7 +347,7 @@ function RoomPage() {
       {isCreator && !finished && (
         <button
           onClick={endGame}
-          className="w-full bg-destructive text-destructive-foreground font-display px-6 py-3 uppercase tracking-widest text-sm mb-6"
+          className="w-full bg-destructive text-destructive-foreground font-display px-6 py-3 uppercase tracking-widest text-sm mb-6 hover:cursor-pointer"
         >
           Encerrar bingo
         </button>
