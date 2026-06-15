@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SalaCodeRouteImport } from './routes/sala.$code'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 
 const PremiumRoute = PremiumRouteImport.update({
   id: '/premium',
@@ -40,41 +41,62 @@ const SalaCodeRoute = SalaCodeRouteImport.update({
   path: '/sala/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AuthRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/premium': typeof PremiumRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/sala/$code': typeof SalaCodeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/premium': typeof PremiumRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/sala/$code': typeof SalaCodeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/premium': typeof PremiumRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/sala/$code': typeof SalaCodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/auth' | '/premium' | '/sala/$code'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/premium'
+    | '/auth/callback'
+    | '/sala/$code'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/auth' | '/premium' | '/sala/$code'
-  id: '__root__' | '/' | '/admin' | '/auth' | '/premium' | '/sala/$code'
+  to: '/' | '/admin' | '/auth' | '/premium' | '/auth/callback' | '/sala/$code'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/premium'
+    | '/auth/callback'
+    | '/sala/$code'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   PremiumRoute: typeof PremiumRoute
   SalaCodeRoute: typeof SalaCodeRoute
 }
@@ -116,13 +138,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SalaCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof AuthRoute
+    }
   }
 }
+
+interface AuthRouteChildren {
+  AuthCallbackRoute: typeof AuthCallbackRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthCallbackRoute: AuthCallbackRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   PremiumRoute: PremiumRoute,
   SalaCodeRoute: SalaCodeRoute,
 }
