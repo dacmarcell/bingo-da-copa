@@ -11,7 +11,11 @@ type AuthCtx = {
 };
 
 const Ctx = createContext<AuthCtx>({
-  session: null, user: null, loading: true, displayName: null, isAdmin: false,
+  session: null,
+  user: null,
+  loading: true,
+  displayName: null,
+  isAdmin: false,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -33,7 +37,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const u = session?.user;
-    if (!u) { setDisplayName(null); setIsAdmin(false); return; }
+    if (!u) {
+      setDisplayName(null);
+      setIsAdmin(false);
+      return;
+    }
     (async () => {
       const [{ data: p }, { data: r }] = await Promise.all([
         supabase.from("profiles").select("display_name").eq("id", u.id).maybeSingle(),

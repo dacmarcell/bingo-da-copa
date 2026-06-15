@@ -13,7 +13,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin"|"signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -29,7 +29,8 @@ function AuthPage() {
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
-          email, password,
+          email,
+          password,
           options: {
             emailRedirectTo: window.location.origin,
             data: { display_name: name || email.split("@")[0] },
@@ -44,25 +45,41 @@ function AuthPage() {
       navigate({ to: "/" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao entrar");
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleGoogle() {
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) { toast.error("Erro ao entrar com Google"); return; }
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      toast.error("Erro ao entrar com Google");
+      return;
+    }
     if (result.redirected) return;
     navigate({ to: "/" });
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground font-body p-4 max-w-md mx-auto flex flex-col">
-      <Link to="/" className="font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground mb-8 mt-2">← voltar</Link>
+      <Link
+        to="/"
+        className="font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground mb-8 mt-2"
+      >
+        ← voltar
+      </Link>
       <div className="flex-1 flex flex-col justify-center">
-        <div className="size-12 bg-accent rounded-sm flex items-center justify-center font-display text-2xl text-accent-foreground mb-6">B</div>
+        <div className="size-12 bg-accent rounded-sm flex items-center justify-center font-display text-2xl text-accent-foreground mb-6">
+          B
+        </div>
         <h1 className="font-display text-4xl uppercase tracking-tight leading-none mb-2">
           {mode === "signin" ? "Entrar" : "Criar conta"}
         </h1>
-        <p className="text-sm text-muted-foreground mb-8">Marque eventos, faça bingo, vença o churrasco.</p>
+        <p className="text-sm text-muted-foreground mb-8">
+          Marque eventos, faça bingo, vença o churrasco.
+        </p>
 
         <button
           onClick={handleGoogle}
@@ -80,23 +97,36 @@ function AuthPage() {
         <form onSubmit={handleEmail} className="space-y-3">
           {mode === "signup" && (
             <input
-              type="text" required value={name} onChange={e => setName(e.target.value)}
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="Como te chamam"
               className="w-full bg-input border border-border px-3 py-3 text-sm font-bold placeholder:font-normal placeholder:text-muted-foreground focus:outline-none focus:border-primary"
             />
           )}
           <input
-            type="email" required value={email} onChange={e => setEmail(e.target.value)}
-            placeholder="email@exemplo.com" autoComplete="email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="email@exemplo.com"
+            autoComplete="email"
             className="w-full bg-input border border-border px-3 py-3 text-sm font-bold placeholder:font-normal placeholder:text-muted-foreground focus:outline-none focus:border-primary"
           />
           <input
-            type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)}
-            placeholder="senha (mín 6 caracteres)" autoComplete={mode === "signup" ? "new-password" : "current-password"}
+            type="password"
+            required
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="senha (mín 6 caracteres)"
+            autoComplete={mode === "signup" ? "new-password" : "current-password"}
             className="w-full bg-input border border-border px-3 py-3 text-sm font-bold placeholder:font-normal placeholder:text-muted-foreground focus:outline-none focus:border-primary"
           />
           <button
-            type="submit" disabled={loading}
+            type="submit"
+            disabled={loading}
             className="w-full bg-primary text-primary-foreground font-display px-6 py-3 uppercase tracking-widest text-sm disabled:opacity-50"
           >
             {loading ? "..." : mode === "signin" ? "Entrar" : "Criar conta"}

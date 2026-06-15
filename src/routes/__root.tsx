@@ -20,9 +20,14 @@ function NotFoundComponent() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="font-display text-7xl text-primary">404</h1>
-        <h2 className="mt-4 font-display text-xl uppercase tracking-widest">Página fora de campo</h2>
+        <h2 className="mt-4 font-display text-xl uppercase tracking-widest">
+          Página fora de campo
+        </h2>
         <p className="mt-2 text-sm text-muted-foreground">A página que você procura não existe.</p>
-        <Link to="/" className="inline-block mt-6 bg-primary text-primary-foreground font-display px-6 py-2 uppercase tracking-widest text-sm">
+        <Link
+          to="/"
+          className="inline-block mt-6 bg-primary text-primary-foreground font-display px-6 py-2 uppercase tracking-widest text-sm"
+        >
           Voltar para o início
         </Link>
       </div>
@@ -42,7 +47,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <h1 className="font-display text-2xl uppercase">Algo deu errado</h1>
         <p className="mt-2 text-sm text-muted-foreground">Tente novamente em instantes.</p>
         <button
-          onClick={() => { router.invalidate(); reset(); }}
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
           className="mt-6 bg-primary text-primary-foreground font-display px-6 py-2 uppercase tracking-widest text-sm"
         >
           Tentar novamente
@@ -58,9 +66,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Bingo da Copa - Jogue bingo durante as partidas" },
-      { name: "description", content: "Crie salas, convide amigos e jogue bingo ao vivo durante os jogos. Eventos do futebol e do churrasco." },
+      {
+        name: "description",
+        content:
+          "Crie salas, convide amigos e jogue bingo ao vivo durante os jogos. Eventos do futebol e do churrasco.",
+      },
       { property: "og:title", content: "Bingo da Copa" },
-      { property: "og:description", content: "Jogue bingo em tempo real durante as partidas de futebol." },
+      {
+        property: "og:description",
+        content: "Jogue bingo em tempo real durante as partidas de futebol.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -68,7 +83,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -80,7 +98,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+      </head>
       <body>
         {children}
         <Scripts />
