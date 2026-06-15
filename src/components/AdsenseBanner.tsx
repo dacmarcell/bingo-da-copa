@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 declare global {
   interface Window {
@@ -7,6 +7,10 @@ declare global {
 }
 
 export function AdsenseBanner() {
+  const adClient = useMemo(() => "ca-pub-4802566656473554", []);
+  //TODO: atualizar slot id quando for aprovado no adsense
+  const adSlot = useMemo(() => "SEU_SLOT_ID", []);
+
   useEffect(() => {
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
@@ -19,8 +23,8 @@ export function AdsenseBanner() {
     <ins
       className="adsbygoogle"
       style={{ display: "block" }}
-      data-ad-client="ca-pub-SEU_ID"
-      data-ad-slot="SEU_SLOT_ID"
+      data-ad-client={adClient}
+      data-ad-slot={adSlot}
       data-ad-format="auto"
       data-full-width-responsive="true"
     />
