@@ -22,19 +22,31 @@ export const Route = createFileRoute("/matches")({
 
 function MatchesPage() {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const pageSize = 10;
 
   useEffect(() => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
 
     supabase
       .from("matches")
-      .select("*")
+      .select("*", { count: "exact" })
       .gte("starts_at", todayStart.toISOString())
       .neq("status", "finished")
       .order("starts_at", { ascending: true })
-      .then(({ data }) => setMatches((data ?? []) as Match[]));
-  }, []);
+      .range(from, to)
+      .then(({ data, count }) => {
+        setMatches((data ?? []) as Match[]);
+        setTotalPages(count ? Math.ceil(count / pageSize) : 0);
+      });
+  }, [page]);
+
+  const hasPrevious = page > 1;
+  const hasNext = page < totalPages;
 
   return (
     <div className="min-h-screen bg-background text-foreground font-body p-4 max-w-md mx-auto pb-24">
@@ -85,6 +97,28 @@ function MatchesPage() {
           </p>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between gap-2">
+          <button
+            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+            disabled={!hasPrevious}
+            className="flex-1 bg-card border border-border px-4 py-3 text-sm uppercase tracking-widest disabled:opacity-50 hover:cursor-pointer"
+          >
+            Anterior
+          </button>
+          <span className="font-mono text-[10px] uppercase text-muted-foreground">
+            Página {page} de {totalPages || 1}
+          </span>
+          <button
+            onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={!hasNext}
+            className="flex-1 bg-card border border-border px-4 py-3 text-sm uppercase tracking-widest disabled:opacity-50 hover:cursor-pointer"
+          >
+            Próxima
+          </button>
+        </div>
+      )}
     </div>
   );
 }
