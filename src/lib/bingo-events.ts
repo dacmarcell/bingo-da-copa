@@ -1,0 +1,39 @@
+export const CLASSIC_EVENTS = [
+  "Gol", "Cartão amarelo", "Cartão vermelho", "Escanteio", "Impedimento",
+  "Pênalti", "Chute na trave", "Acréscimos no 2º tempo", "VAR", "Alguém xinga o juiz",
+  "Levantou do sofá pra reclamar", "Comentarista interrompe", "Narrador cita jogo antigo",
+  "Close em torcedor chorando", "Casal aparece no telão", "Criança fantasiada",
+  "Torcedor pintado", "Celebridade aparece", "Torcedor nervoso", "Substituição",
+  "Erro de passe", "Falta perigosa", "Goleiro defende", "Bola na lateral", "Lance polêmico",
+];
+
+export const CHURRASCO_EVENTS = [
+  "Carne queimou", "Acabou o gelo", "Xingou o juiz", "Derrubaram cerveja",
+  "Discussão sobre impedimento", "Pessoa chegou atrasada", "Falou do 7x1",
+  "Pediu mais pão de alho", "Esqueceu de trazer algo", "Criança correndo",
+  "Reclamou do preço da carne", "Dormiu na cadeira", "Acabou o carvão",
+  "Falou de política", "Perguntou regra do impedimento", "Derrubou comida",
+  "Comemorou antes da hora", "Reclamação do VAR", "Reclamou dos jogadores atuais",
+  "Citou Pelé", "Citou Maradona", "Pediu o sal", "Trocou a música", "Chegou mais gente",
+  "Acabou a cerveja",
+];
+
+export const FAMILIA_EVENTS = [
+  "Reclama do técnico", "Antigamente era melhor", "Chegou no meio do jogo",
+  "Não entende as regras", "Pergunta o placar", "Torce para outro país",
+  "Discute melhor jogador", "Fala do Pelé", "Pergunta se saiu a carne",
+  "Vai à cozinha no melhor lance", "Pede refrigerante", "Acaba o petisco",
+  "Reclama da comida", "Aparece com prato cheio", "Pergunta da sobremesa",
+  "Derruba comida", "Volta da cozinha e pergunta", "Pede o controle remoto",
+  "Aumenta o volume", "Reclama do volume", "Criança muda o canal",
+  "Bloqueia a visão da TV", "Mexe na internet", "Atende o telefone alto",
+  "Tira foto da TV",
+];
+
+export const THEMES = {
+  classic: { label: "Clássico", events: CLASSIC_EVENTS, premium: false },
+  churrasco: { label: "Churrasco da Copa", events: CHURRASCO_EVENTS, premium: true },
+  familia: { label: "Família na Copa", events: FAMILIA_EVENTS, premium: true },
+} as const;
+
+export type ThemeKey = keyof typeof THEMES;
