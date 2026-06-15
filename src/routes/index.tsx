@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { genRoomCode, generateCard } from "@/lib/bingo";
 import { THEMES, type ThemeKey } from "@/lib/bingo-events";
 import { toast } from "sonner";
+import { AdsenseBanner } from "@/components/AdsenseBanner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -263,7 +264,7 @@ function Home() {
       {/* Adsense placeholder */}
       <div className="h-20 border border-dashed border-border flex items-center justify-center mb-4">
         <span className="font-mono text-[10px] text-muted-foreground uppercase">
-          publicidade adsense
+          <AdsenseBanner />
         </span>
       </div>
 
