@@ -14,16 +14,246 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cards: {
+        Row: {
+          cells: Json
+          created_at: string
+          id: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          cells: Json
+          created_at?: string
+          id?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          cells?: Json
+          created_at?: string
+          id?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cards_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matches: {
+        Row: {
+          competition: string
+          created_at: string
+          id: string
+          score_a: number
+          score_b: number
+          starts_at: string
+          status: Database["public"]["Enums"]["match_status"]
+          team_a: string
+          team_a_code: string
+          team_b: string
+          team_b_code: string
+        }
+        Insert: {
+          competition?: string
+          created_at?: string
+          id?: string
+          score_a?: number
+          score_b?: number
+          starts_at: string
+          status?: Database["public"]["Enums"]["match_status"]
+          team_a: string
+          team_a_code?: string
+          team_b: string
+          team_b_code?: string
+        }
+        Update: {
+          competition?: string
+          created_at?: string
+          id?: string
+          score_a?: number
+          score_b?: number
+          starts_at?: string
+          status?: Database["public"]["Enums"]["match_status"]
+          team_a?: string
+          team_a_code?: string
+          team_b?: string
+          team_b_code?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string
+          id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name: string
+          id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      room_participants: {
+        Row: {
+          bingos: number
+          display_name: string
+          id: string
+          joined_at: string
+          marks_count: number
+          room_id: string
+          score: number
+          user_id: string
+        }
+        Insert: {
+          bingos?: number
+          display_name: string
+          id?: string
+          joined_at?: string
+          marks_count?: number
+          room_id: string
+          score?: number
+          user_id: string
+        }
+        Update: {
+          bingos?: number
+          display_name?: string
+          id?: string
+          joined_at?: string
+          marks_count?: number
+          room_id?: string
+          score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_participants_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          code: string
+          created_at: string
+          creator_id: string
+          finished_at: string | null
+          id: string
+          match_id: string
+          name: string
+          status: Database["public"]["Enums"]["room_status"]
+          theme: Database["public"]["Enums"]["card_theme"]
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          creator_id: string
+          finished_at?: string | null
+          id?: string
+          match_id: string
+          name: string
+          status?: Database["public"]["Enums"]["room_status"]
+          theme?: Database["public"]["Enums"]["card_theme"]
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          creator_id?: string
+          finished_at?: string | null
+          id?: string
+          match_id?: string
+          name?: string
+          status?: Database["public"]["Enums"]["room_status"]
+          theme?: Database["public"]["Enums"]["card_theme"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          active: boolean
+          created_at: string
+          expires_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      card_theme: "classic" | "churrasco" | "familia"
+      match_status: "scheduled" | "live" | "finished"
+      room_status: "waiting" | "in_progress" | "finished"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +380,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      card_theme: ["classic", "churrasco", "familia"],
+      match_status: ["scheduled", "live", "finished"],
+      room_status: ["waiting", "in_progress", "finished"],
+    },
   },
 } as const
