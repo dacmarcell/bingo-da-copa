@@ -65,6 +65,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "google-adsense-account", content: "ca-pub-4802566656473554" },
       { title: "Bingo da Copa - Jogue bingo durante as partidas" },
       {
         name: "description",
