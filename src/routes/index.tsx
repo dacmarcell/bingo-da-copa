@@ -7,6 +7,7 @@ import { genRoomCode, generateCard } from "@/lib/bingo";
 import { THEMES, type ThemeKey } from "@/lib/bingo-events";
 import { toast } from "sonner";
 import { AdsenseBanner } from "@/components/AdsenseBanner";
+import { Beef } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -256,7 +257,9 @@ function Home() {
             </Link>
           </div>
           <div className="size-16 bg-black/20 rounded-full flex items-center justify-center shrink-0">
-            <span className="text-3xl rotate-12">🥩</span>
+            <span className="text-3xl rotate-12">
+              <Beef />
+            </span>
           </div>
         </div>
       </div>

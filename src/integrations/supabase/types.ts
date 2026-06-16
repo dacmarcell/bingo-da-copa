@@ -155,7 +155,6 @@ export type Database = {
           paid_at: string | null;
           pixup_charge_id: string | null;
           qr_code: string | null;
-          qr_code_text: string | null;
           status: string;
           updated_at: string;
           user_id: string;
@@ -171,7 +170,6 @@ export type Database = {
           paid_at?: string | null;
           pixup_charge_id?: string | null;
           qr_code?: string | null;
-          qr_code_text?: string | null;
           status?: string;
           updated_at?: string;
           user_id: string;
@@ -187,7 +185,6 @@ export type Database = {
           paid_at?: string | null;
           pixup_charge_id?: string | null;
           qr_code?: string | null;
-          qr_code_text?: string | null;
           status?: string;
           updated_at?: string;
           user_id?: string;

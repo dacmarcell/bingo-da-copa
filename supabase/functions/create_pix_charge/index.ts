@@ -92,7 +92,12 @@ async function getCachedPixupAccessToken() {
   return tokenPayload.access_token as string;
 }
 
-async function createPixupCharge(transactionId: string, amount: number, description: string) {
+async function createPixupCharge(
+  transactionId: string,
+  amount: number,
+  description: string,
+  user: { email: string },
+) {
   const accessToken = await getCachedPixupAccessToken();
 
   const payload = {
@@ -100,6 +105,10 @@ async function createPixupCharge(transactionId: string, amount: number, descript
     description,
     external_id: transactionId,
     postbackUrl: "https://heemixrmovdrmajwebzv.supabase.co/functions/v1/pixup_webhook",
+    payer: {
+      name: user.email,
+      document: "00000000000",
+    },
   };
 
   const response = await fetch("https://api.pixupbr.com/v2/pix/qrcode", {
@@ -112,6 +121,7 @@ async function createPixupCharge(transactionId: string, amount: number, descript
   });
 
   const responseBody = await response.json();
+
   if (!response.ok) {
     throw new Error(
       `Pixup charge creation failed: ${responseBody?.message ?? response.statusText}`,
@@ -186,18 +196,16 @@ serve(async (request: any) => {
       description,
     });
 
-    const chargePayload = await createPixupCharge(transactionId, amount, description);
-    const qrCode = chargePayload.qr_code || chargePayload.qrCode || null;
-    const qrCodeText =
-      chargePayload.qr_code_text || chargePayload.qrCodeText || chargePayload.payload || null;
-    const expiresAt = chargePayload.expires_at || chargePayload.expirationDate || null;
-    const chargeId = chargePayload.id || chargePayload.charge_id || null;
+    const chargePayload = await createPixupCharge(transactionId, amount, description, user);
+
+    const qrCode = chargePayload.qrcode || null;
+    const expiresAt = new Date(Date.now() + chargePayload.calendar.expiration * 1000);
+    const chargeId = chargePayload.transactionId || null;
 
     const { error: updateError } = await supabaseAdmin
       .from("transactions")
       .update({
         qr_code: qrCode,
-        qr_code_text: qrCodeText,
         expires_at: expiresAt,
         pixup_charge_id: chargeId,
         updated_at: new Date().toISOString(),
@@ -216,7 +224,6 @@ serve(async (request: any) => {
         transaction_id: transactionId,
         amount,
         qrCode,
-        qrCodeText,
         expirationDate: expiresAt,
         status: "PENDING",
       }),

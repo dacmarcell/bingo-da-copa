@@ -4,12 +4,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import QRCode from "react-qr-code";
 
 type PixTransaction = {
   transaction_id: string;
   amount: number;
   qrCode: string | null;
-  qrCodeText: string | null;
   expirationDate: string | null;
   status: string;
 };
@@ -25,6 +25,7 @@ function PremiumPage() {
   const [loading, setLoading] = useState(false);
   const [transaction, setTransaction] = useState<PixTransaction | null>(null);
   const [polling, setPolling] = useState(false);
+  const [hasCopied, setHasCopied] = useState(false);
 
   async function createPixCharge() {
     if (!user) {
@@ -83,6 +84,19 @@ function PremiumPage() {
     return () => clearInterval(interval);
   }, [polling, transaction]);
 
+  const formatTransactionStatus = (status: string) => {
+    switch (status) {
+      case "PENDING":
+        return "Pendente";
+      case "PAID":
+        return "Pago";
+      case "FAILED":
+        return "Falhou";
+      default:
+        return status;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground font-body p-4 max-w-md mx-auto pb-24">
       <Header subtitle="Premium" />
@@ -136,25 +150,49 @@ function PremiumPage() {
       {transaction && (
         <div className="bg-card border border-border p-4 mb-4">
           <h3 className="font-display text-lg uppercase tracking-tight mb-3">Pagamento Pix</h3>
-          <div className="space-y-3">
-            {transaction.qrCode ? (
-              <img src={transaction.qrCode} alt="QR Code Pix" className="w-full rounded-md" />
+          <div className="space-y-4">
+            {transaction?.qrCode ? (
+              <>
+                <div className="flex justify-center">
+                  <QRCode value={transaction.qrCode} size={256} />
+                </div>
+
+                <div className="bg-background border border-border p-3 rounded-md">
+                  <p className="text-[10px] uppercase text-muted-foreground mb-2">Copiar e colar</p>
+
+                  <textarea
+                    readOnly
+                    value={transaction.qrCode}
+                    rows={4}
+                    className="w-full resize-none rounded-md border border-border p-2 text-xs"
+                  />
+                </div>
+
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(transaction.qrCode!);
+                    setHasCopied(true);
+                  }}
+                  className={`text-primary-foreground font-display w-full border border-border p-2 text-sm hover:cursor-pointer ${hasCopied ? "bg-primary text-black" : "hover:bg-muted text-white"}`}
+                >
+                  {hasCopied ? "Código PIX copiado!" : "Copiar código PIX"}
+                </button>
+              </>
             ) : (
               <p className="text-sm text-muted-foreground">QR Code indisponível.</p>
             )}
-            <div className="bg-background border border-border p-3 rounded-md">
-              <p className="text-[10px] uppercase text-muted-foreground mb-2">Copiar e colar</p>
-              <pre className="text-xs break-words">{transaction.qrCodeText}</pre>
-            </div>
+
             <p className="text-xs text-muted-foreground">
-              Status: <span className="font-bold uppercase">{transaction.status}</span>
+              Status:{" "}
+              <span className="font-bold uppercase">
+                {formatTransactionStatus(transaction.status)}
+              </span>
             </p>
-            <p className="text-xs text-muted-foreground">
-              Expira em:{" "}
-              {transaction.expirationDate
-                ? new Date(transaction.expirationDate).toLocaleString("pt-BR")
-                : "—"}
-            </p>
+            {transaction.expirationDate ? (
+              <p className="text-xs text-muted-foreground">
+                Expira em: {new Date(transaction.expirationDate).toLocaleString("pt-BR")}
+              </p>
+            ) : null}
           </div>
         </div>
       )}

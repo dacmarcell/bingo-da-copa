@@ -75,7 +75,7 @@ serve(async (request: any) => {
 
     const { data: transaction, error } = await supabaseAdmin
       .from("transactions")
-      .select("id, user_id, amount, status, qr_code, qr_code_text, expires_at")
+      .select("id, user_id, amount, status, qr_code, expires_at")
       .eq("id", transactionId)
       .maybeSingle();
 

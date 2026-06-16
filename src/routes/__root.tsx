@@ -51,7 +51,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             router.invalidate();
             reset();
           }}
-          className="mt-6 bg-primary text-primary-foreground font-display px-6 py-2 uppercase tracking-widest text-sm"
+          className="mt-6 bg-primary text-primary-foreground font-display px-6 py-2 uppercase tracking-widest text-sm hover:cursor-pointer"
         >
           Tentar novamente
         </button>

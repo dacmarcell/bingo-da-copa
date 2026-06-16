@@ -11,7 +11,6 @@ create table if not exists public.transactions (
   paid_at timestamptz,
   expires_at timestamptz,
   qr_code text,
-  qr_code_text text,
   external_id text unique,
   pixup_charge_id text unique,
   metadata jsonb
