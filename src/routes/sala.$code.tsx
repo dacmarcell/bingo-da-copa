@@ -251,7 +251,7 @@ function RoomPage() {
         </button>
         <button
           onClick={shareWhatsApp}
-          className="bg-accent text-accent-foreground px-3 py-2 font-mono text-[10px] uppercase tracking-widest font-bold"
+          className="bg-accent text-accent-foreground px-3 py-2 font-mono text-[10px] uppercase tracking-widest font-bold hover:cursor-pointer"
         >
           WhatsApp
         </button>

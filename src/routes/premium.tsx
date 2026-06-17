@@ -131,8 +131,7 @@ function PremiumPage() {
       </h2>
       <div className="bg-card border border-border p-4 mb-4">
         <p className="text-xs text-muted-foreground mb-3">
-          A assinatura só será ativada após confirmação oficial da Pixup pelo webhook. Enquanto
-          isso, o acesso premium permanece bloqueado.
+          A assinatura só será ativada após confirmação do pagamento.
         </p>
         <button
           onClick={createPixCharge}

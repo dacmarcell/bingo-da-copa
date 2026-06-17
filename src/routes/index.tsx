@@ -267,7 +267,7 @@ function Home() {
       {/* Adsense placeholder */}
       <div className="h-20 border border-dashed border-border flex items-center justify-center mb-4">
         <span className="font-mono text-[10px] text-muted-foreground uppercase">
-          <AdsenseBanner />
+          <AdsenseBanner key={location.pathname} />
         </span>
       </div>
 

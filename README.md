@@ -2,5 +2,4 @@
 
 ### A fazer
 
-- Esperar a chave liberar pra terminar o fluxo de pagamento
-- Atualizar slot id quando for aprovado no adsense
+- Esperar as credenciais de sandbox pra terminar o fluxo de pagamento
