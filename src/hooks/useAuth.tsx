@@ -8,6 +8,7 @@ type AuthCtx = {
   loading: boolean;
   displayName: string | null;
   isAdmin: boolean;
+  isSubscriber: boolean;
 };
 
 const Ctx = createContext<AuthCtx>({
@@ -16,6 +17,7 @@ const Ctx = createContext<AuthCtx>({
   loading: true,
   displayName: null,
   isAdmin: false,
+  isSubscriber: false,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -23,6 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSubscriber, setIsSubscriber] = useState(false);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
@@ -40,20 +43,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!u) {
       setDisplayName(null);
       setIsAdmin(false);
+      setIsSubscriber(false);
       return;
     }
     (async () => {
-      const [{ data: p }, { data: r }] = await Promise.all([
+      const [{ data: p }, { data: r }, { data: subData }] = await Promise.all([
         supabase.from("profiles").select("display_name").eq("id", u.id).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", u.id),
+        supabase
+          .from("subscriptions")
+          .select("active,expires_at")
+          .eq("user_id", u.id)
+          .maybeSingle(),
       ]);
       setDisplayName(p?.display_name ?? u.email?.split("@")[0] ?? "Torcedor");
       setIsAdmin((r ?? []).some((x: { role: string }) => x.role === "admin"));
+      // Check if subscription is active and not expired
+      const active =
+        subData?.active && (!subData.expires_at || new Date(subData.expires_at) > new Date());
+      setIsSubscriber(active ?? false);
     })();
   }, [session]);
 
   return (
-    <Ctx.Provider value={{ session, user: session?.user ?? null, loading, displayName, isAdmin }}>
+    <Ctx.Provider
+      value={{ session, user: session?.user ?? null, loading, displayName, isAdmin, isSubscriber }}
+    >
       {children}
     </Ctx.Provider>
   );

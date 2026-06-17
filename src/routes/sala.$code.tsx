@@ -37,11 +37,12 @@ type Participant = {
   score: number;
   marks_count: number;
   bingos: number;
+  swaps_count?: number;
 };
 
 function RoomPage() {
   const { code } = Route.useParams();
-  const { user, displayName, loading: authLoading } = useAuth();
+  const { user, displayName, loading: authLoading, isSubscriber } = useAuth();
   const navigate = useNavigate();
   const [room, setRoom] = useState<Room | null>(null);
   const [match, setMatch] = useState<Match | null>(null);
@@ -49,6 +50,8 @@ function RoomPage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [confetti, setConfetti] = useState(false);
   const [bingoCount, setBingoCount] = useState(0);
+  const [swapsCount, setSwapsCount] = useState(0);
+  const [swapping, setSwapping] = useState(false);
 
   // Load room
   useEffect(() => {
@@ -80,9 +83,15 @@ function RoomPage() {
         .eq("user_id", user.id)
         .maybeSingle();
       if (!existing) {
-        await supabase
-          .from("room_participants")
-          .insert({ room_id: r.id, user_id: user.id, display_name: displayName ?? "Torcedor" });
+        await supabase.from("room_participants").insert({
+          room_id: r.id,
+          user_id: user.id,
+          display_name: displayName ?? "Torcedor",
+          swaps_count: 0,
+        } as any);
+      } else {
+        // Load swaps_count from existing participant
+        setSwapsCount((existing as any).swaps_count || 0);
       }
       // Card
       const { data: card } = await supabase
@@ -197,6 +206,34 @@ function RoomPage() {
     }
   }
 
+  async function swapCard() {
+    if (!room || !user || swapping) return;
+
+    setSwapping(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("swap_card", {
+        body: JSON.stringify({ room_id: room.id }),
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const result = data as { success: boolean; cells: Cell[]; swaps_remaining: number };
+
+      if (result.success) {
+        setCells(result.cells);
+        setSwapsCount(swapsCount + 1);
+        toast.success(`Cartela trocada! ${result.swaps_remaining} trocas restantes.`);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erro ao trocar cartela";
+      toast.error(errorMessage);
+    } finally {
+      setSwapping(false);
+    }
+  }
+
   function shareWhatsApp() {
     if (!room) return;
     const url = `${window.location.origin}/sala/${room.code}`;
@@ -293,7 +330,9 @@ function RoomPage() {
             {cell.free ? (
               <>
                 <span className="font-display text-xl text-primary leading-none">★</span>
-                <span className="text-[7px] font-black uppercase text-center">FREE</span>
+                <span className="text-[7px] font-black uppercase text-center">
+                  {THEMES[room.theme].premium ? "VIP" : "FREE"}
+                </span>
               </>
             ) : (
               <>
@@ -310,6 +349,23 @@ function RoomPage() {
           </button>
         ))}
       </div>
+
+      {/* Swap card button for subscribers */}
+      {isSubscriber && !finished && (
+        <div className="mb-4">
+          <button
+            onClick={swapCard}
+            disabled={swapsCount >= 3 || swapping}
+            className="w-full bg-accent text-accent-foreground font-display px-4 py-2 uppercase tracking-widest text-xs hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {swapping
+              ? "Trocando..."
+              : swapsCount >= 3
+                ? "Limite de trocas atingido"
+                : `Trocar cartela (${3 - swapsCount} restantes)`}
+          </button>
+        </div>
+      )}
 
       <p className="font-mono text-[10px] text-muted-foreground uppercase mb-2">
         Tema: {THEMES[room.theme].label}

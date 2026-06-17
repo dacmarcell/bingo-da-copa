@@ -46,7 +46,8 @@ type Room = {
 };
 
 function Home() {
-  const { user } = useAuth();
+  const { user, isSubscriber } = useAuth();
+  console.log(isSubscriber);
   const navigate = useNavigate();
   const [matches, setMatches] = useState<Match[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -240,36 +241,40 @@ function Home() {
       </section>
 
       {/* Premium upsell */}
-      <div className="bg-linear-to-br from-orange-500 to-red-600 p-4 mb-8 shadow-2xl shadow-orange-500/20">
-        <div className="flex justify-between items-start gap-2">
-          <div>
-            <h3 className="font-display text-2xl uppercase italic tracking-tighter text-white">
-              PREMIUM PASS
-            </h3>
-            <p className="text-xs font-bold text-white/90 mb-4">
-              Sem anúncios + temas exclusivos: Churrasco & Família
-            </p>
-            <Link
-              to="/premium"
-              className="inline-block bg-white text-black font-display px-6 py-2 text-sm uppercase tracking-widest hover:bg-white/90"
-            >
-              ASSINAR R$ 4,90
-            </Link>
-          </div>
-          <div className="size-16 bg-black/20 rounded-full flex items-center justify-center shrink-0">
-            <span className="text-3xl rotate-12">
-              <Beef />
-            </span>
+      {!isSubscriber ? (
+        <div className="bg-linear-to-br from-orange-500 to-red-600 p-4 mb-8 shadow-2xl shadow-orange-500/20">
+          <div className="flex justify-between items-start gap-2">
+            <div>
+              <h3 className="font-display text-2xl uppercase italic tracking-tighter text-white">
+                PREMIUM PASS
+              </h3>
+              <p className="text-xs font-bold text-white/90 mb-4">
+                Sem anúncios + temas exclusivos: Churrasco & Família
+              </p>
+              <Link
+                to="/premium"
+                className="inline-block bg-white text-black font-display px-6 py-2 text-sm uppercase tracking-widest hover:bg-white/90"
+              >
+                ASSINAR R$ 4,90
+              </Link>
+            </div>
+            <div className="size-16 bg-black/20 rounded-full flex items-center justify-center shrink-0">
+              <span className="text-3xl rotate-12">
+                <Beef />
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
-      {/* Adsense placeholder */}
-      <div className="h-20 border border-dashed border-border flex items-center justify-center mb-4">
-        <span className="font-mono text-[10px] text-muted-foreground uppercase">
-          <AdsenseBanner key={location.pathname} />
-        </span>
-      </div>
+      {/* Adsense placeholder - hidden for subscribers */}
+      {!isSubscriber && (
+        <div className="h-20 border border-dashed border-border flex items-center justify-center mb-4">
+          <span className="font-mono text-[10px] text-muted-foreground uppercase">
+            <AdsenseBanner key={location.pathname} />
+          </span>
+        </div>
+      )}
 
       {/* Create room modal */}
       {openModal && (

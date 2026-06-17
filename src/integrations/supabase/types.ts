@@ -113,6 +113,7 @@ export type Database = {
           room_id: string;
           score: number;
           user_id: string;
+          swaps_count: number;
         };
         Insert: {
           bingos?: number;
@@ -123,6 +124,7 @@ export type Database = {
           room_id: string;
           score?: number;
           user_id: string;
+          swaps_count?: number;
         };
         Update: {
           bingos?: number;
@@ -133,6 +135,7 @@ export type Database = {
           room_id?: string;
           score?: number;
           user_id?: string;
+          swaps_count?: number;
         };
         Relationships: [
           {

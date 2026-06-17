@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 declare global {
   interface Window {
@@ -7,13 +8,21 @@ declare global {
 }
 
 export function AdsenseBanner() {
+  const { isSubscriber } = useAuth();
+
   useEffect(() => {
+    // Don't load ads for subscribers
+    if (isSubscriber) return;
+
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch (err) {
       console.error(err);
     }
-  }, []);
+  }, [isSubscriber]);
+
+  // Don't render ads for subscribers
+  if (isSubscriber) return null;
 
   return (
     <ins

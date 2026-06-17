@@ -118,6 +118,7 @@ CREATE TABLE public.room_participants (
   marks_count INT NOT NULL DEFAULT 0,
   bingos INT NOT NULL DEFAULT 0,
   joined_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  swaps_count INT NOT NULL DEFAULT 0,
   UNIQUE(room_id, user_id)
 );
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.room_participants TO authenticated;
