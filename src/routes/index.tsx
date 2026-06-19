@@ -322,7 +322,7 @@ function CreateRoomModal({
               <button
                 key={key}
                 onClick={() => onCreate(key)}
-                className="w-full text-left bg-background border border-border p-3 hover:border-primary/40 flex justify-between items-center"
+                className="w-full text-left bg-background border border-border p-3 hover:border-primary/40 hover:cursor-pointer flex justify-between items-center"
               >
                 <span className="font-bold text-sm">{t.label}</span>
                 {t.premium && <span className="font-mono text-[10px] text-primary">PREMIUM</span>}
