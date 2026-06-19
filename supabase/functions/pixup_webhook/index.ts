@@ -97,7 +97,6 @@ serve(async (request: any) => {
     }
 
     if (existingLog) {
-      console.log("Duplicate webhook event ignored", eventId);
       return new Response("Duplicate event", { status: 200, headers: corsHeaders });
     }
   }

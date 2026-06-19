@@ -47,7 +47,6 @@ type Room = {
 
 function Home() {
   const { user, isSubscriber } = useAuth();
-  console.log(isSubscriber);
   const navigate = useNavigate();
   const [matches, setMatches] = useState<Match[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
