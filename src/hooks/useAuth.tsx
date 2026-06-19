@@ -56,11 +56,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .eq("user_id", u.id)
           .maybeSingle(),
       ]);
+
       setDisplayName(p?.display_name ?? u.email?.split("@")[0] ?? "Torcedor");
       setIsAdmin((r ?? []).some((x: { role: string }) => x.role === "admin"));
       // Check if subscription is active and not expired
       const active =
         subData?.active && (!subData.expires_at || new Date(subData.expires_at) > new Date());
+
       setIsSubscriber(active ?? false);
     })();
   }, [session]);

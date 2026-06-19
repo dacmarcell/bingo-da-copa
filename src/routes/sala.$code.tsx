@@ -56,6 +56,7 @@ function RoomPage() {
   // Load room
   useEffect(() => {
     if (authLoading) return;
+
     if (!user) {
       navigate({
         to: "/auth",
@@ -93,7 +94,7 @@ function RoomPage() {
           user_id: user.id,
           display_name: displayName ?? "Torcedor",
           swaps_count: 0,
-        } as any);
+        });
       } else {
         // Load swaps_count from existing participant
         setSwapsCount((existing as any).swaps_count || 0);
@@ -123,6 +124,7 @@ function RoomPage() {
         .select("*")
         .eq("room_id", room.id)
         .order("score", { ascending: false });
+
       setParticipants((data ?? []) as Participant[]);
     };
     load();
