@@ -11,6 +11,7 @@ export const Route = createFileRoute("/auth/callback")({
 function AuthCallbackPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const redirect = new URLSearchParams(window.location.search).get("redirect") || "/";
 
   useEffect(() => {
     let mounted = true;
@@ -23,7 +24,7 @@ function AuthCallbackPage() {
         if (!mounted) return;
 
         if (data.session) {
-          navigate({ to: "/" });
+          window.location.href = redirect;
         } else {
           toast.error("Sessão não encontrada. Faça login novamente.");
           navigate({ to: "/auth" });

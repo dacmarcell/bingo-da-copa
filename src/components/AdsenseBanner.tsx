@@ -1,5 +1,5 @@
-import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 declare global {
   interface Window {

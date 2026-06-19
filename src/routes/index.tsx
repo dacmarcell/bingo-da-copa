@@ -1,13 +1,13 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { AdsenseBanner } from "@/components/AdsenseBanner";
 import { Header } from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
-import { genRoomCode, generateCard } from "@/lib/bingo";
+import { supabase } from "@/integrations/supabase/client";
+import { generateCard, genRoomCode } from "@/lib/bingo";
 import { THEMES, type ThemeKey } from "@/lib/bingo-events";
-import { toast } from "sonner";
-import { AdsenseBanner } from "@/components/AdsenseBanner";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Beef } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({

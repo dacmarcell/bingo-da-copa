@@ -19,9 +19,12 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const redirect = new URLSearchParams(window.location.search).get("redirect") || "/";
+
   useEffect(() => {
-    if (session) navigate({ to: "/" });
-  }, [session, navigate]);
+    if (!session) return;
+    window.location.href = redirect;
+  }, [session]);
 
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
@@ -42,7 +45,8 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-      navigate({ to: "/" });
+
+      window.location.href = redirect;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao entrar");
     } finally {
@@ -54,16 +58,14 @@ function AuthPage() {
     const result = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo:
+          `${window.location.origin}/auth/callback?redirect=` + encodeURIComponent(redirect),
       },
     });
 
     if (result.error) {
       toast.error("Erro ao entrar com Google");
-      return;
     }
-
-    navigate({ to: "/" });
   }
 
   return (

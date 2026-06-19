@@ -1,5 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -51,33 +51,87 @@ async function getAuthenticatedUser(request: Request) {
 function generateCard(theme: string) {
   // Import event pools based on theme
   const CLASSIC_EVENTS = [
-    "Gol", "Cartão amarelo", "Cartão vermelho", "Escanteio", "Impedimento",
-    "Pênalti", "Chute na trave", "Acréscimos no 2º tempo", "VAR", "Alguém xinga o juiz",
-    "Levantou do sofá pra reclamar", "Comentarista interrompe", "Narrador cita jogo antigo",
-    "Close em torcedor chorando", "Casal aparece no telão", "Criança fantasiada",
-    "Torcedor pintado", "Celebridade aparece", "Torcedor nervoso", "Substituição",
-    "Erro de passe", "Falta perigosa", "Goleiro defende", "Bola na lateral", "Lance polêmico",
+    "Gol",
+    "Cartão amarelo",
+    "Cartão vermelho",
+    "Escanteio",
+    "Impedimento",
+    "Pênalti",
+    "Chute na trave",
+    "Acréscimos no 2º tempo",
+    "VAR",
+    "Alguém xinga o juiz",
+    "Levantou do sofá pra reclamar",
+    "Comentarista interrompe",
+    "Narrador cita jogo antigo",
+    "Close em torcedor chorando",
+    "Casal aparece no telão",
+    "Criança fantasiada",
+    "Torcedor pintado",
+    "Celebridade aparece",
+    "Torcedor nervoso",
+    "Substituição",
+    "Erro de passe",
+    "Falta perigosa",
+    "Goleiro defende",
+    "Bola na lateral",
+    "Lance polêmico",
   ];
 
   const CHURRASCO_EVENTS = [
-    "Carne queimou", "Acabou o gelo", "Xingou o juiz", "Derrubaram cerveja",
-    "Discussão sobre impedimento", "Pessoa chegou atrasada", "Falou do 7x1",
-    "Pediu mais pão de alho", "Esqueceu de trazer algo", "Criança correndo",
-    "Reclamou do preço da carne", "Dormiu na cadeira", "Acabou o carvão", "Falou de política",
-    "Perguntou regra do impedimento", "Derrubou comida", "Comemorou antes da hora",
-    "Reclamação do VAR", "Reclamou dos jogadores atuais", "Citou Pelé", "Citou Maradona",
-    "Pediu o sal", "Trocou a música", "Chegou mais gente", "Acabou a cerveja",
+    "Carne queimou",
+    "Acabou o gelo",
+    "Xingou o juiz",
+    "Derrubaram cerveja",
+    "Discussão sobre impedimento",
+    "Pessoa chegou atrasada",
+    "Falou do 7x1",
+    "Pediu mais pão de alho",
+    "Esqueceu de trazer algo",
+    "Criança correndo",
+    "Reclamou do preço da carne",
+    "Dormiu na cadeira",
+    "Acabou o carvão",
+    "Falou de política",
+    "Perguntou regra do impedimento",
+    "Derrubou comida",
+    "Comemorou antes da hora",
+    "Reclamação do VAR",
+    "Reclamou dos jogadores atuais",
+    "Citou Pelé",
+    "Citou Maradona",
+    "Pediu o sal",
+    "Trocou a música",
+    "Chegou mais gente",
+    "Acabou a cerveja",
   ];
 
   const FAMILIA_EVENTS = [
-    "Reclama do técnico", "Antigamente era melhor", "Chegou no meio do jogo",
-    "Não entende as regras", "Pergunta o placar", "Torce para outro país",
-    "Discute melhor jogador", "Fala do Pelé", "Pergunta se saiu a carne",
-    "Vai à cozinha no melhor lance", "Pede refrigerante", "Acaba o petisco",
-    "Reclama da comida", "Aparece com prato cheio", "Pergunta da sobremesa",
-    "Derruba comida", "Volta da cozinha e pergunta", "Pede o controle remoto",
-    "Aumenta o volume", "Reclama do volume", "Criança muda o canal",
-    "Bloqueia a visão da TV", "Mexe na internet", "Atende o telefone alto", "Tira foto da TV",
+    "Reclama do técnico",
+    "Antigamente era melhor",
+    "Chegou no meio do jogo",
+    "Não entende as regras",
+    "Pergunta o placar",
+    "Torce para outro país",
+    "Discute melhor jogador",
+    "Fala do Pelé",
+    "Pergunta se saiu a carne",
+    "Vai à cozinha no melhor lance",
+    "Pede refrigerante",
+    "Acaba o petisco",
+    "Reclama da comida",
+    "Aparece com prato cheio",
+    "Pergunta da sobremesa",
+    "Derruba comida",
+    "Volta da cozinha e pergunta",
+    "Pede o controle remoto",
+    "Aumenta o volume",
+    "Reclama do volume",
+    "Criança muda o canal",
+    "Bloqueia a visão da TV",
+    "Mexe na internet",
+    "Atende o telefone alto",
+    "Tira foto da TV",
   ];
 
   let pool: string[];
@@ -141,9 +195,14 @@ serve(async (request) => {
       return new Response("Error checking subscription", { status: 500, headers: corsHeaders });
     }
 
-    const isActive = subscription?.active && (!subscription.expires_at || new Date(subscription.expires_at) > new Date());
+    const isActive =
+      subscription?.active &&
+      (!subscription.expires_at || new Date(subscription.expires_at) > new Date());
     if (!isActive) {
-      return new Response("Premium subscription required to swap cards", { status: 403, headers: corsHeaders });
+      return new Response("Premium subscription required to swap cards", {
+        status: 403,
+        headers: corsHeaders,
+      });
     }
 
     // Get room details to check theme
@@ -158,7 +217,10 @@ serve(async (request) => {
     }
 
     if (room.status === "finished") {
-      return new Response("Cannot swap card in finished room", { status: 400, headers: corsHeaders });
+      return new Response("Cannot swap card in finished room", {
+        status: 400,
+        headers: corsHeaders,
+      });
     }
 
     // Check current swap count for this user in this room
@@ -175,7 +237,10 @@ serve(async (request) => {
 
     const currentSwaps = participant.swaps_count || 0;
     if (currentSwaps >= 3) {
-      return new Response("Maximum of 3 card swaps per room reached", { status: 403, headers: corsHeaders });
+      return new Response("Maximum of 3 card swaps per room reached", {
+        status: 403,
+        headers: corsHeaders,
+      });
     }
 
     // Generate new card

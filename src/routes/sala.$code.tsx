@@ -1,10 +1,10 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
-import { generateCard, computeScore, type Cell } from "@/lib/bingo";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { computeScore, generateCard, type Cell } from "@/lib/bingo";
 import { THEMES, type ThemeKey } from "@/lib/bingo-events";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/sala/$code")({
@@ -57,7 +57,12 @@ function RoomPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      navigate({ to: "/auth" });
+      navigate({
+        to: "/auth",
+        search: {
+          redirect: window.location.pathname,
+        },
+      });
       return;
     }
     (async () => {
