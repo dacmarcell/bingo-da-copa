@@ -5,9 +5,15 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const PIXUP_CLIENT_ID = Deno.env.get("PIXUP_CLIENT_ID");
 const PIXUP_CLIENT_SECRET = Deno.env.get("PIXUP_CLIENT_SECRET");
+const WEBHOOK_URL =
+  Deno.env.get("WEBHOOK_URL") ||
+  "https://heemixrmovdrmajwebzv.supabase.co/functions/v1/pixup_webhook";
+const ALLOWED_ORIGINS = Deno.env.get("ALLOWED_ORIGINS")?.split(",") || [
+  "https://heemixrmovdrmajwebzv.supabase.co",
+];
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGINS[0],
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -104,7 +110,7 @@ async function createPixupCharge(
     amount,
     description,
     external_id: transactionId,
-    postbackUrl: "https://heemixrmovdrmajwebzv.supabase.co/functions/v1/pixup_webhook",
+    postbackUrl: WEBHOOK_URL,
     payer: {
       name: user.email,
       document: "00000000000",
@@ -167,8 +173,14 @@ serve(async (request: any) => {
     const amount = Number(body.amount);
     const description = String(body.description ?? "Assinatura Premium").trim();
 
-    if (!amount || amount <= 0) {
+    // Validate amount
+    if (!amount || amount <= 0 || amount > 10000) {
       return new Response("Invalid amount", { status: 400, headers: corsHeaders });
+    }
+
+    // Validate description length
+    if (description.length > 200) {
+      return new Response("Description too long", { status: 400, headers: corsHeaders });
     }
 
     const transactionId = crypto.randomUUID();
@@ -187,6 +199,7 @@ serve(async (request: any) => {
 
     if (insertError) {
       console.error("Transaction create failed", insertError);
+      // Don't leak detailed error information to client
       return new Response("Unable to create transaction", { status: 500, headers: corsHeaders });
     }
 
@@ -214,6 +227,7 @@ serve(async (request: any) => {
 
     if (updateError) {
       console.error("Transaction update failed", updateError);
+      // Don't leak detailed error information to client
       return new Response("Unable to update transaction", { status: 500, headers: corsHeaders });
     }
 

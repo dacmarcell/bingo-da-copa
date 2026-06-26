@@ -3,9 +3,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const ALLOWED_ORIGINS = Deno.env.get("ALLOWED_ORIGINS")?.split(",") || [
+  "https://heemixrmovdrmajwebzv.supabase.co",
+];
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGINS[0],
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -183,6 +186,12 @@ serve(async (request) => {
       return new Response("room_id is required", { status: 400, headers: corsHeaders });
     }
 
+    // Validate room_id is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(roomId)) {
+      return new Response("Invalid room_id format", { status: 400, headers: corsHeaders });
+    }
+
     // Check if user has active subscription
     const { data: subscription, error: subError } = await supabaseAdmin
       .from("subscriptions")
@@ -255,6 +264,7 @@ serve(async (request) => {
 
     if (cardError) {
       console.error("Card update failed", cardError);
+      // Don't leak detailed error information to client
       return new Response("Error updating card", { status: 500, headers: corsHeaders });
     }
 
@@ -267,6 +277,7 @@ serve(async (request) => {
 
     if (swapCountError) {
       console.error("Swap count update failed", swapCountError);
+      // Don't leak detailed error information to client
       return new Response("Error updating swap count", { status: 500, headers: corsHeaders });
     }
 

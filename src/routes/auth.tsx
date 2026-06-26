@@ -21,10 +21,24 @@ function AuthPage() {
 
   const redirect = new URLSearchParams(window.location.search).get("redirect") || "/";
 
+  // Validate redirect URL to prevent open redirect attacks
+  const isValidRedirect = (url: string): boolean => {
+    if (!url) return false;
+    try {
+      const parsed = new URL(url, window.location.origin);
+      // Only allow redirects to the same origin
+      return parsed.origin === window.location.origin;
+    } catch {
+      return false;
+    }
+  };
+
+  const safeRedirect = isValidRedirect(redirect) ? redirect : "/";
+
   useEffect(() => {
     if (!session) return;
-    window.location.href = redirect;
-  }, [session]);
+    window.location.href = safeRedirect;
+  }, [session, safeRedirect]);
 
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
@@ -46,7 +60,7 @@ function AuthPage() {
         if (error) throw error;
       }
 
-      window.location.href = redirect;
+      window.location.href = safeRedirect;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao entrar");
     } finally {
@@ -59,7 +73,7 @@ function AuthPage() {
       provider: "google",
       options: {
         redirectTo:
-          `${window.location.origin}/auth/callback?redirect=` + encodeURIComponent(redirect),
+          `${window.location.origin}/auth/callback?redirect=` + encodeURIComponent(safeRedirect),
       },
     });
 
