@@ -1,7 +1,7 @@
 import { Header } from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { computeScore, generateCard, type Cell } from "@/lib/bingo";
+import { computeScore, type Cell } from "@/lib/bingo";
 import { THEMES, type ThemeKey } from "@/lib/bingo-events";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
@@ -30,6 +30,12 @@ type Match = {
   score_a: number;
   score_b: number;
 };
+const SWAP_ERRORS: Record<string, string> = {
+  premium_required: "Trocar cartela é um recurso Premium",
+  swap_limit_reached: "Limite de trocas atingido",
+  room_finished: "A sala já foi encerrada",
+};
+
 type Participant = {
   id: string;
   user_id: string;
@@ -42,7 +48,7 @@ type Participant = {
 
 function RoomPage() {
   const { code } = Route.useParams();
-  const { user, displayName, loading: authLoading, isSubscriber } = useAuth();
+  const { user, loading: authLoading, isSubscriber } = useAuth();
   const navigate = useNavigate();
   const [room, setRoom] = useState<Room | null>(null);
   const [match, setMatch] = useState<Match | null>(null);
@@ -81,39 +87,31 @@ function RoomPage() {
         .maybeSingle();
       setMatch(m as Match);
 
-      // Join if not yet
-      const { data: existing } = await supabase
+      // Join (idempotent). The server creates the participant + card and refuses new
+      // joins on finished rooms.
+      const { error: joinError } = await supabase.rpc("join_room", { _code: r.code });
+      if (joinError) {
+        toast.error(joinError.message === "room_full" ? "Sala lotada" : "Não foi possível entrar");
+        navigate({ to: "/" });
+        return;
+      }
+      const { data: me } = await supabase
         .from("room_participants")
-        .select("*")
+        .select("swaps_count")
         .eq("room_id", r.id)
         .eq("user_id", user.id)
         .maybeSingle();
-      if (!existing) {
-        await supabase.from("room_participants").insert({
-          room_id: r.id,
-          user_id: user.id,
-          display_name: displayName ?? "Torcedor",
-          swaps_count: 0,
-        });
-      } else {
-        // Load swaps_count from existing participant
-        setSwapsCount((existing as any).swaps_count || 0);
-      }
-      // Card
+      setSwapsCount(me?.swaps_count ?? 0);
+      // Card (RLS: only the owner can read it)
       const { data: card } = await supabase
         .from("cards")
         .select("cells")
         .eq("room_id", r.id)
         .eq("user_id", user.id)
         .maybeSingle();
-      if (card) setCells(card.cells as Cell[]);
-      else {
-        const newCells = generateCard(r.theme);
-        await supabase.from("cards").insert({ room_id: r.id, user_id: user.id, cells: newCells });
-        setCells(newCells);
-      }
+      setCells(card ? (card.cells as Cell[]) : []);
     })();
-  }, [code, user, authLoading, displayName, navigate]);
+  }, [code, user, authLoading, navigate]);
 
   // Realtime participants/ranking
   useEffect(() => {
@@ -157,7 +155,8 @@ function RoomPage() {
       if (cells[idx]?.free) return;
       const newCells = cells.map((c, i) => (i === idx ? { ...c, marked: !c.marked } : c));
       setCells(newCells);
-      const { score, marks, lines, full } = computeScore(newCells);
+      // Local preview for the confetti only: the score is computed by the database
+      const { lines, full } = computeScore(newCells);
       const newBingos = (lines > 0 ? 1 : 0) + (full ? 1 : 0);
       if (newBingos > bingoCount) {
         setConfetti(true);
@@ -165,16 +164,16 @@ function RoomPage() {
         setTimeout(() => setConfetti(false), 2800);
       }
       setBingoCount(newBingos);
-      await supabase
+      const { error } = await supabase
         .from("cards")
         .update({ cells: newCells })
         .eq("room_id", room.id)
         .eq("user_id", user.id);
-      await supabase
-        .from("room_participants")
-        .update({ score, marks_count: marks, bingos: newBingos })
-        .eq("room_id", room.id)
-        .eq("user_id", user.id);
+      if (error) {
+        setCells(cells);
+        setBingoCount(bingoCount);
+        toast.error("Não foi possível marcar. Tente novamente.");
+      }
     },
     [cells, user, room, bingoCount],
   );
@@ -218,19 +217,18 @@ function RoomPage() {
 
     setSwapping(true);
     try {
-      const { data, error } = await supabase.functions.invoke("swap_card", {
-        body: JSON.stringify({ room_id: room.id }),
-      });
+      const { data, error } = await supabase.rpc("swap_card", { _room_id: room.id });
 
       if (error) {
-        throw new Error(error.message);
+        throw new Error(SWAP_ERRORS[error.message] ?? "Erro ao trocar cartela");
       }
 
       const result = data as { success: boolean; cells: Cell[]; swaps_remaining: number };
 
       if (result.success) {
         setCells(result.cells);
-        setSwapsCount(swapsCount + 1);
+        setBingoCount(0);
+        setSwapsCount(3 - result.swaps_remaining);
         toast.success(`Cartela trocada! ${result.swaps_remaining} trocas restantes.`);
       }
     } catch (err) {
@@ -245,7 +243,7 @@ function RoomPage() {
     if (!room) return;
     const url = `${window.location.origin}/sala/${room.code}`;
     const text = encodeURIComponent(`Vem jogar Bingo da Copa comigo! Sala: ${room.name} - ${url}`);
-    window.open(`https://wa.me/?text=${text}`, "_blank");
+    window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
   }
 
   function copyCode() {

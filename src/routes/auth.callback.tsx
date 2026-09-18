@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getSafeRedirect } from "@/lib/safe-redirect";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth/callback")({
@@ -11,7 +12,7 @@ export const Route = createFileRoute("/auth/callback")({
 function AuthCallbackPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const redirect = new URLSearchParams(window.location.search).get("redirect") || "/";
+  const redirect = getSafeRedirect(new URLSearchParams(window.location.search).get("redirect"));
 
   useEffect(() => {
     let mounted = true;

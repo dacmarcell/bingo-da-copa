@@ -1,11 +1,12 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import {
+  UUID_RE,
+  corsHeaders,
+  getAuthenticatedUser,
+  jsonResponse,
+  textResponse,
+} from "../_shared/http.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -23,91 +24,59 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   },
 });
 
-async function getAuthenticatedUser(request: Request) {
-  const authHeader = request.headers.get("Authorization") || "";
+serve(async (request: Request) => {
+  const cors = corsHeaders(request);
 
-  if (!authHeader.startsWith("Bearer ")) {
-    return null;
-  }
-
-  const token = authHeader.replace("Bearer ", "");
-
-  const authClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
-
-  const { data, error } = await authClient.auth.getUser(token);
-
-  if (error || !data.user) {
-    console.error(error);
-    return null;
-  }
-
-  return data.user;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-serve(async (request: any) => {
   if (request.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: corsHeaders,
-    });
+    return new Response("ok", { headers: cors });
   }
 
   if (request.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
+    return textResponse("Method Not Allowed", 405, cors);
   }
 
   try {
     const user = await getAuthenticatedUser(request);
     if (!user) {
-      return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+      return textResponse("Unauthorized", 401, cors);
     }
 
-    const body = await request.json();
-    const transactionId = String(body.transaction_id || "").trim();
-    if (!transactionId) {
-      return new Response("Missing transaction_id", { status: 400, headers: corsHeaders });
+    const body = await request.json().catch(() => null);
+    const transactionId = String(body?.transaction_id ?? "").trim();
+    if (!UUID_RE.test(transactionId)) {
+      return textResponse("Invalid transaction_id", 400, cors);
     }
 
+    // Filtering by user_id means other people's transactions look like "not found"
     const { data: transaction, error } = await supabaseAdmin
       .from("transactions")
-      .select("id, user_id, amount, status, qr_code, expires_at")
+      .select("id, amount, status, qr_code, expires_at")
       .eq("id", transactionId)
+      .eq("user_id", user.id)
       .maybeSingle();
 
     if (error) {
       console.error("Transaction lookup failed", error);
-      return new Response("Internal Server Error", { status: 500, headers: corsHeaders });
+      return textResponse("Internal Server Error", 500, cors);
     }
 
     if (!transaction) {
-      return new Response("Transaction not found", { status: 404, headers: corsHeaders });
+      return textResponse("Transaction not found", 404, cors);
     }
 
-    if (transaction.user_id !== user.id) {
-      return new Response("Forbidden", { status: 403, headers: corsHeaders });
-    }
-
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         transaction_id: transaction.id,
         amount: Number(transaction.amount),
         qrCode: transaction.qr_code,
-        qrCodeText: transaction.qr_code_text,
         expirationDate: transaction.expires_at,
         status: transaction.status,
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
       },
+      200,
+      cors,
     );
   } catch (error) {
     console.error("Transaction status error", error);
-    return new Response("Internal Server Error", { status: 500, headers: corsHeaders });
+    return textResponse("Internal Server Error", 500, cors);
   }
 });

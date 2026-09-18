@@ -1,1 +1,6 @@
 project_id = "pzicrvcxnpztdjhldagu"
+
+# The webhook is called by the payment gateway (no Supabase JWT); it authenticates the request
+# itself with WEBHOOK_SECRET. Every other function keeps the default verify_jwt = true.
+[functions.pixup_webhook]
+verify_jwt = false

@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
+import { getSafeRedirect } from "@/lib/safe-redirect";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -19,21 +19,7 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const redirect = new URLSearchParams(window.location.search).get("redirect") || "/";
-
-  // Validate redirect URL to prevent open redirect attacks
-  const isValidRedirect = (url: string): boolean => {
-    if (!url) return false;
-    try {
-      const parsed = new URL(url, window.location.origin);
-      // Only allow redirects to the same origin
-      return parsed.origin === window.location.origin;
-    } catch {
-      return false;
-    }
-  };
-
-  const safeRedirect = isValidRedirect(redirect) ? redirect : "/";
+  const safeRedirect = getSafeRedirect(new URLSearchParams(window.location.search).get("redirect"));
 
   useEffect(() => {
     if (!session) return;
@@ -119,6 +105,7 @@ function AuthPage() {
             <input
               type="text"
               required
+              maxLength={40}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Como te chamam"
@@ -137,10 +124,10 @@ function AuthPage() {
           <input
             type="password"
             required
-            minLength={6}
+            minLength={mode === "signup" ? 8 : undefined}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="senha (mín 6 caracteres)"
+            placeholder={mode === "signup" ? "senha (mín 8 caracteres)" : "senha"}
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
             className="w-full bg-input border border-border px-3 py-3 text-sm font-bold placeholder:font-normal placeholder:text-muted-foreground focus:outline-none focus:border-primary"
           />

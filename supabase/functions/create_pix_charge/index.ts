@@ -1,26 +1,36 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { corsHeaders, getAuthenticatedUser, jsonResponse, textResponse } from "../_shared/http.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const PIXUP_CLIENT_ID = Deno.env.get("PIXUP_CLIENT_ID");
 const PIXUP_CLIENT_SECRET = Deno.env.get("PIXUP_CLIENT_SECRET");
-const WEBHOOK_URL =
-  Deno.env.get("WEBHOOK_URL") ||
-  "https://heemixrmovdrmajwebzv.supabase.co/functions/v1/pixup_webhook";
-const ALLOWED_ORIGINS = Deno.env.get("ALLOWED_ORIGINS")?.split(",") || [
-  "https://heemixrmovdrmajwebzv.supabase.co",
-];
+const WEBHOOK_URL = Deno.env.get("WEBHOOK_URL");
+const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET");
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": ALLOWED_ORIGINS[0],
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !PIXUP_CLIENT_ID || !PIXUP_CLIENT_SECRET) {
+if (
+  !SUPABASE_URL ||
+  !SUPABASE_SERVICE_ROLE_KEY ||
+  !PIXUP_CLIENT_ID ||
+  !PIXUP_CLIENT_SECRET ||
+  !WEBHOOK_URL ||
+  !WEBHOOK_SECRET
+) {
   throw new Error("Missing required environment variables for Pixup Edge Function");
 }
+
+// The price is decided here, never by the client.
+const PREMIUM_PRICE = 4.9;
+const PREMIUM_DESCRIPTION = "Assinatura Premium";
+const MAX_CHARGES_PER_HOUR = 5;
+
+// The webhook has no JWT, so its URL carries a shared secret that pixup_webhook verifies.
+const POSTBACK_URL = (() => {
+  const url = new URL(WEBHOOK_URL);
+  url.searchParams.set("token", WEBHOOK_SECRET);
+  return url.toString();
+})();
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: {
@@ -28,32 +38,6 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     autoRefreshToken: false,
   },
 });
-
-async function getAuthenticatedUser(request: Request) {
-  const authHeader = request.headers.get("Authorization") || "";
-
-  if (!authHeader.startsWith("Bearer ")) {
-    return null;
-  }
-
-  const token = authHeader.replace("Bearer ", "");
-
-  const authClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
-
-  const { data, error } = await authClient.auth.getUser(token);
-
-  if (error || !data.user) {
-    console.error(error);
-    return null;
-  }
-
-  return data.user;
-}
 
 async function getCachedPixupAccessToken() {
   const { data, error } = await supabaseAdmin
@@ -81,7 +65,8 @@ async function getCachedPixupAccessToken() {
   const tokenPayload = await tokenResponse.json();
 
   if (!tokenResponse.ok || !tokenPayload.access_token) {
-    throw new Error(`Failed to obtain Pixup token: ${JSON.stringify(tokenPayload)}`);
+    // Never include the gateway response: it can echo credentials
+    throw new Error(`Failed to obtain Pixup token (HTTP ${tokenResponse.status})`);
   }
 
   const expiresIn = Number(tokenPayload.expires_in ?? 3600);
@@ -98,21 +83,16 @@ async function getCachedPixupAccessToken() {
   return tokenPayload.access_token as string;
 }
 
-async function createPixupCharge(
-  transactionId: string,
-  amount: number,
-  description: string,
-  user: { email: string },
-) {
+async function createPixupCharge(transactionId: string, user: { email?: string }) {
   const accessToken = await getCachedPixupAccessToken();
 
   const payload = {
-    amount,
-    description,
+    amount: PREMIUM_PRICE,
+    description: PREMIUM_DESCRIPTION,
     external_id: transactionId,
-    postbackUrl: WEBHOOK_URL,
+    postbackUrl: POSTBACK_URL,
     payer: {
-      name: user.email,
+      name: user.email ?? "Torcedor",
       document: "00000000000",
     },
   };
@@ -151,36 +131,61 @@ async function logAudit(
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-serve(async (request: any) => {
+serve(async (request: Request) => {
+  const cors = corsHeaders(request);
+
   if (request.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: corsHeaders,
-    });
+    return new Response("ok", { headers: cors });
   }
 
   if (request.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
+    return textResponse("Method Not Allowed", 405, cors);
   }
 
   try {
     const user = await getAuthenticatedUser(request);
     if (!user?.id) {
-      return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+      return textResponse("Unauthorized", 401, cors);
     }
 
-    const body = await request.json();
-    const amount = Number(body.amount);
-    const description = String(body.description ?? "Assinatura Premium").trim();
+    // Reuse a still-valid pending charge instead of creating (and paying the gateway for) another
+    const { data: pending } = await supabaseAdmin
+      .from("transactions")
+      .select("id, amount, qr_code, expires_at")
+      .eq("user_id", user.id)
+      .eq("status", "PENDING")
+      .not("qr_code", "is", null)
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    // Validate amount
-    if (!amount || amount <= 0 || amount > 10000) {
-      return new Response("Invalid amount", { status: 400, headers: corsHeaders });
+    if (pending) {
+      return jsonResponse(
+        {
+          transaction_id: pending.id,
+          amount: Number(pending.amount),
+          qrCode: pending.qr_code,
+          expirationDate: pending.expires_at,
+          status: "PENDING",
+        },
+        200,
+        cors,
+      );
     }
 
-    // Validate description length
-    if (description.length > 200) {
-      return new Response("Description too long", { status: 400, headers: corsHeaders });
+    const { count: recentCount, error: countError } = await supabaseAdmin
+      .from("transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString());
+
+    if (countError) {
+      console.error("Rate limit lookup failed", countError);
+      return textResponse("Internal Server Error", 500, cors);
+    }
+    if ((recentCount ?? 0) >= MAX_CHARGES_PER_HOUR) {
+      return textResponse("Too many requests", 429, cors);
     }
 
     const transactionId = crypto.randomUUID();
@@ -189,7 +194,7 @@ serve(async (request: any) => {
     const { error: insertError } = await supabaseAdmin.from("transactions").insert({
       id: transactionId,
       user_id: user.id,
-      amount,
+      amount: PREMIUM_PRICE,
       status: "PENDING",
       gateway: "pixup",
       created_at: now,
@@ -200,19 +205,21 @@ serve(async (request: any) => {
     if (insertError) {
       console.error("Transaction create failed", insertError);
       // Don't leak detailed error information to client
-      return new Response("Unable to create transaction", { status: 500, headers: corsHeaders });
+      return textResponse("Unable to create transaction", 500, cors);
     }
 
     await logAudit(transactionId, "TRANSACTION_CREATED", {
       user_id: user.id,
-      amount,
-      description,
+      amount: PREMIUM_PRICE,
+      description: PREMIUM_DESCRIPTION,
     });
 
-    const chargePayload = await createPixupCharge(transactionId, amount, description, user);
+    const chargePayload = await createPixupCharge(transactionId, user);
 
     const qrCode = chargePayload.qrcode || null;
-    const expiresAt = new Date(Date.now() + chargePayload.calendar.expiration * 1000);
+    const expiresAt = new Date(
+      Date.now() + Number(chargePayload.calendar?.expiration ?? 3600) * 1000,
+    );
     const chargeId = chargePayload.transactionId || null;
 
     const { error: updateError } = await supabaseAdmin
@@ -228,29 +235,24 @@ serve(async (request: any) => {
     if (updateError) {
       console.error("Transaction update failed", updateError);
       // Don't leak detailed error information to client
-      return new Response("Unable to update transaction", { status: 500, headers: corsHeaders });
+      return textResponse("Unable to update transaction", 500, cors);
     }
 
     await logAudit(transactionId, "PIXUP_CHARGE_CREATED", chargePayload);
 
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         transaction_id: transactionId,
-        amount,
+        amount: PREMIUM_PRICE,
         qrCode,
         expirationDate: expiresAt,
         status: "PENDING",
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders,
-        },
       },
+      200,
+      cors,
     );
   } catch (error) {
     console.error("Create Pix charge error", error);
-    return new Response("Internal Server Error", { status: 500, headers: corsHeaders });
+    return textResponse("Internal Server Error", 500, cors);
   }
 });

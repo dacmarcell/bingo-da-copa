@@ -359,6 +359,21 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      create_room: {
+        Args: {
+          _match_id: string;
+          _theme: Database["public"]["Enums"]["card_theme"];
+        };
+        Returns: string;
+      };
+      join_room: {
+        Args: { _code: string };
+        Returns: string;
+      };
+      swap_card: {
+        Args: { _room_id: string };
+        Returns: Json;
+      };
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"];

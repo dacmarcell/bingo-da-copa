@@ -35,9 +35,8 @@ function PremiumPage() {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create_pix_charge", {
-        body: JSON.stringify({ amount: 4.9, description: "Assinatura Premium" }),
-      });
+      // The price is fixed server-side; the client only asks for a charge
+      const { data, error } = await supabase.functions.invoke("create_pix_charge");
 
       if (error) {
         throw new Error(error.message);

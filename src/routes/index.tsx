@@ -2,7 +2,6 @@ import { AdsenseBanner } from "@/components/AdsenseBanner";
 import { Header } from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { generateCard, genRoomCode } from "@/lib/bingo";
 import { THEMES, type ThemeKey } from "@/lib/bingo-events";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Beef } from "lucide-react";
@@ -108,39 +107,21 @@ function Home() {
         return;
       }
     }
-    const code = genRoomCode();
-    const name = `Sala ${match.team_a_code} x ${match.team_b_code}`;
-    const { data: room, error } = await supabase
-      .from("rooms")
-      .insert({
-        code,
-        name,
-        match_id: match.id,
-        creator_id: user.id,
-        theme,
-      })
-      .select()
-      .single();
-    if (error || !room) {
-      toast.error("Erro ao criar sala");
+    // Server validates the premium theme, generates the code and creates the participant + card
+    const { data: code, error } = await supabase.rpc("create_room", {
+      _match_id: match.id,
+      _theme: theme,
+    });
+    if (error || !code) {
+      toast.error(
+        error?.message === "premium_required"
+          ? "Tema Premium - assine por R$ 4,90 para liberar"
+          : error?.message === "too_many_open_rooms"
+            ? "Você já tem muitas salas abertas. Encerre alguma antes de criar outra."
+            : "Erro ao criar sala",
+      );
       return;
     }
-    // Auto-join + cartela
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", user.id)
-      .single();
-    await supabase.from("room_participants").insert({
-      room_id: room.id,
-      user_id: user.id,
-      display_name: profile?.display_name ?? "Torcedor",
-    });
-    await supabase.from("cards").insert({
-      room_id: room.id,
-      user_id: user.id,
-      cells: generateCard(theme),
-    });
     navigate({ to: "/sala/$code", params: { code } });
   }
 
